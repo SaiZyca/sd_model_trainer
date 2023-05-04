@@ -1,4 +1,5 @@
 import gradio as gr
+import gradio_client
 import os
 import argparse
 from library.train_avatar_gui import train_avatar_tab
@@ -54,8 +55,9 @@ def UI(**kwargs):
         launch_kwargs['inbrowser'] = inbrowser
     if share:
         launch_kwargs['share'] = share
+        
+    
     interface.launch(**launch_kwargs)
-
 
 if __name__ == '__main__':
     # torch.cuda.set_per_process_memory_fraction(0.48)
@@ -75,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--server_port',
         type=int,
-        default=3333,
+        default=44444,
         help='Port to run the server listener on',
     )
     parser.add_argument(
@@ -84,7 +86,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--share', action='store_true', help='Share the gradio UI'
     )
-
+    
+    parser.add_argument(
+        '--api', 
+        default=True,
+        action='store_true', 
+        help='api mode'
+    )
     args = parser.parse_args()
 
     UI(
@@ -93,5 +101,8 @@ if __name__ == '__main__':
         inbrowser=args.inbrowser,
         server_port=args.server_port,
         share=args.share,
+        api=args.api,
         listen=args.listen,
     )
+    
+    

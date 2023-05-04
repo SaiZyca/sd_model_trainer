@@ -1,3 +1,4 @@
 train_project/
 cache/
 *.pyc
+test/
