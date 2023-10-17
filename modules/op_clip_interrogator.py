@@ -109,7 +109,7 @@ def image_to_prompt(image, mode, clip_model_name, blip_model_name):
     elif mode == 'negative':
         prompt = ci.interrogate_negative(image)
     
-    with open('readme.txt', 'w', encoding='UTF-8') as f:
+    with open('last_prompt.txt', 'w', encoding='UTF-8') as f:
         f.write(prompt)
     
     return prompt
