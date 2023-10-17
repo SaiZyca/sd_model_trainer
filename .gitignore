@@ -2,3 +2,7 @@ train_project/
 cache/
 *.pyc
 test/
+venv/
+modules\ffmpeg.exe
+modules\ffplay.exe
+modules\ffprobe.exe
