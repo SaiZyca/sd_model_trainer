@@ -4,9 +4,9 @@ import os
 from . import common_func
 
 def setup():
-    os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
+    os.environ.get('TORCH_COMMAND', "pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --extra-index-url https://download.pytorch.org/whl/cu118")
 
-def train_avatar_tab(setting_path=""):
+def ui(setting_path=""):
     n_inputs = 5
     img_inps = list()
     text_inpt = list()

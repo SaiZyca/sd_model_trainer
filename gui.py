@@ -1,11 +1,7 @@
 import gradio as gr
-import gradio_client
 import os
-import argparse
-from library.train_avatar_gui import train_avatar_tab
+from modules import cmd_args, ui_train_avatar, ui_clip_interrogator
 from pathlib import Path
-import subprocess
-
 
 # def setup():
 #     install_cmds = [
@@ -22,7 +18,7 @@ def UI(**kwargs):
     css = ''
 
     if os.path.exists('./style.css'):
-        with open(os.path.join('./style.css'), 'r', encoding='utf8') as file:
+        with open(os.path.join('./style.css'), 'r', encoding='utf8') as file: 
             print('Load CSS...')
             css += file.read() + '\n'
 
@@ -33,8 +29,10 @@ def UI(**kwargs):
     os.makedirs(train_project_folder, exist_ok=True)
 
     with interface:
+        with gr.Tab('clip interrogator'):
+            ui_clip_interrogator.ui()
         with gr.Tab('Avatar Trainer'):
-            train_avatar_tab()
+            ui_train_avatar.ui()
 
 
     # Show the interface
@@ -60,40 +58,8 @@ def UI(**kwargs):
     interface.launch(**launch_kwargs)
 
 if __name__ == '__main__':
-    # torch.cuda.set_per_process_memory_fraction(0.48)
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--listen',
-        type=str,
-        default='127.0.0.1',
-        help='IP to listen on for connections to Gradio',
-    )
-    parser.add_argument(
-        '--username', type=str, default='', help='Username for authentication'
-    )
-    parser.add_argument(
-        '--password', type=str, default='', help='Password for authentication'
-    )
-    parser.add_argument(
-        '--server_port',
-        type=int,
-        default=44444,
-        help='Port to run the server listener on',
-    )
-    parser.add_argument(
-        '--inbrowser', action='store_true', help='Open in browser'
-    )
-    parser.add_argument(
-        '--share', action='store_true', help='Share the gradio UI'
-    )
-    
-    parser.add_argument(
-        '--api', 
-        default=True,
-        action='store_true', 
-        help='api mode'
-    )
-    args = parser.parse_args()
+    # torch.cuda.set_per_process_memory_fraction(0.48) 
+    args, _ = cmd_args.parser.parse_known_args()
 
     UI(
         username=args.username,

@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "prettier:check",
+			"path": "venv/Lib/site-packages/matplotlib/backends/web_backend",
+			"problemMatcher": [],
+			"label": "npm: prettier:check - venv/Lib/site-packages/matplotlib/backends/web_backend",
+			"detail": "prettier --check \"**/*{.ts,.tsx,.js,.jsx,.css,.json}\""
+		}
+	]
+}
