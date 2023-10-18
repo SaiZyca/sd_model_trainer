@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import gradio as gr
 import os
 from modules import cmd_args, ui_train_avatar, ui_clip_interrogator

@@ -7,12 +7,16 @@ from . import op_tinker
 
 
 def prompt_tab():
-    with gr.Row():
-        mode = gr.Radio(['best', 'fast', 'classic', 'negative'], label='Mode', value='classic')
-        clip_model = gr.Dropdown(Ci_op.list_clip_models(), value=Ci_op.ci.config.clip_model_name, label='CLIP Model')
-        blip_model = gr.Dropdown(Ci_op.list_caption_models(), value=Ci_op.ci.config.caption_model_name, label='Caption Model')
-        # clip_model = gr.Dropdown(Ci_op.list_clip_models(), value='ViT-L-14/openai', label='CLIP Model')
-        # blip_model = gr.Dropdown(Ci_op.list_caption_models(), value='blip-large', label='Caption Model')
+    with gr.Group():
+        with gr.Accordion("clip interrogator Config", open=True):
+            with gr.Row():
+                caption_max_length = gr.Number(value=32, label="caption max length", minimum=1,step=1, interactive=True,)  
+                chunk_size = gr.Number(value=1024, label="chunk/batch size", minimum=1,step=1, interactive=True,)
+                flavor_intermediate_count = gr.Number(value=2048, label="flavor count", minimum=1,step=1, interactive=True,)
+            with gr.Row():
+                mode = gr.Dropdown(['best', 'fast', 'classic', 'negative', 'caption'], value='caption', label='Mode')
+                clip_model = gr.Dropdown(Ci_op.list_clip_models(), value=Ci_op.ci.config.clip_model_name, label='CLIP Model')
+                blip_model = gr.Dropdown(Ci_op.list_caption_models(), value=Ci_op.ci.config.caption_model_name, label='Caption Model')
     with gr.Group():
         with gr.Row(equal_height=True):
             image = gr.Image(type='pil', label="Image")
@@ -24,26 +28,21 @@ def prompt_tab():
         with gr.Row():
             batch_folder = gr.Text(label="Images folder to caption", value="", interactive=True, placeholder="Images folder", scale=4)
             open_folder_button = gr.Button(symbols.folder_symbol, elem_id='open_folder_small')
-            batch_size = gr.Number(value=1, label="Batch size", minimum=1,step=1, interactive=True,)
-            img_ext = gr.Text(label="Image file type (separated by ,)", value="jpg,png,webp", interactive=True,)
-            caption_ext = gr.Text(label="Caption file extension", value=".txt", interactive=True)
+            img_exts = gr.Text(label="Image file type (separated by ,)", value="jpg,png,webp", interactive=True,)
         with gr.Row():
             prefix_text = gr.Text(placeholder="Prefix to add to caption (Optional)", show_label=False)
             postfix_text = gr.Text(placeholder="Postfix to add to caption (Optional)", show_label=False)
+            caption_ext = gr.Text(placeholder="Caption file extension, default .txt", show_label=False)
         with gr.Row():
             batch_button = gr.Button("Caption images")
             interrupt_button = gr.Button('Interrupt', visible=True)
+            
     with gr.Group():
         with gr.Row():
-            device_info = op_torch.cuda_device.info()
-            info = ("%s:%s GB | Vram Allocated: %s GB | Vram Cached: %s GB " % (\
-                        device_info['device'],\
-                        device_info['Total Vram'],\
-                        device_info['Vram Allocated'],\
-                        device_info['Vram Cached'],)\
-                            )
-            gr.Textbox(label="Device Info:",interactive=False,value=info, scale=3)
+            info = Ci_op.device_info()
+            device_info_box = gr.Textbox(label="Device Info:",interactive=False,value=info, scale=3)
             unload_button = gr.Button("Unload")
+            
     with gr.Group():
         with gr.Row():
             analyze_button = gr.Button("Analyze features")
@@ -65,15 +64,28 @@ def prompt_tab():
         )    
 
     # execute
-    prompt_button.click(Ci_op.image_to_prompt, inputs=[image, mode, clip_model, blip_model], outputs=prompt)
+    prompt_button.click(Ci_op.image_to_prompt, 
+                        inputs=[image, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, prefix_text, postfix_text], 
+                        outputs=[prompt, device_info_box],)
     
-    open_folder_button.click(op_tinker.file_browser, inputs=data_type, outputs=batch_folder, show_progress="hidden")
+    open_folder_button.click(op_tinker.file_browser, 
+                             inputs=data_type, 
+                             outputs=batch_folder, 
+                             show_progress="hidden")
+    
     batch_button.click(Ci_op.batch_process, 
-                        inputs=[batch_folder, mode, clip_model, blip_model, prefix_text, postfix_text],
-                        outputs=None,
+                        inputs=[batch_folder, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, prefix_text, postfix_text, img_exts, caption_ext],
+                        outputs=device_info_box,
                         )
-    unload_button.click(Ci_op.unload)
-    analyze_button.click(Ci_op.image_analysis, inputs=[image, clip_model], outputs=[medium, artist, movement, trending, flavor])
+    
+    unload_button.click(Ci_op.unload,
+                        inputs=None,
+                        outputs=device_info_box,
+                        )
+    
+    analyze_button.click(Ci_op.image_analysis, 
+                         inputs=[image, clip_model], 
+                         outputs=[medium, artist, movement, trending, flavor],)
     
     
 def ui():
