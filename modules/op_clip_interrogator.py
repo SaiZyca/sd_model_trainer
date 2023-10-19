@@ -100,34 +100,24 @@ def device_info():
                     )
     return info
 
-def image_analysis(image, clip_model):
+def image_analysis(image, clip_model, num_top_classes):
     if clip_model != ci.config.clip_model_name:
         ci.config.clip_model_name = clip_model
         ci.load_clip_model()
     
+    num_top_classes = int(num_top_classes)
     image = image.convert('RGB')
     image_features = ci.image_to_features(image)
 
-    top_mediums = ci.mediums.rank(image_features, 5)
-    top_artists = ci.artists.rank(image_features, 5)
-    top_movements = ci.movements.rank(image_features, 5)
-    top_trendings = ci.trendings.rank(image_features, 5)
-    top_flavors = ci.flavors.rank(image_features, 5)
+    top_mediums = ", ".join(ci.mediums.rank(image_features, num_top_classes))
+    top_artists = ", ".join(ci.artists.rank(image_features, num_top_classes))
+    top_movements = ", ".join(ci.movements.rank(image_features, num_top_classes))
+    top_trendings = ", ".join(ci.trendings.rank(image_features, num_top_classes))
+    top_flavors = ", ".join(ci.flavors.rank(image_features, num_top_classes))
+    
+    return top_mediums, top_artists, top_movements, top_trendings, top_flavors
 
-    medium_ranks = {medium: sim for medium, sim in zip(top_mediums, ci.similarities(image_features, top_mediums))}
-    artist_ranks = {artist: sim for artist, sim in zip(top_artists, ci.similarities(image_features, top_artists))}
-    movement_ranks = {movement: sim for movement, sim in zip(top_movements, ci.similarities(image_features, top_movements))}
-    trending_ranks = {trending: sim for trending, sim in zip(top_trendings, ci.similarities(image_features, top_trendings))}
-    flavor_ranks = {flavor: sim for flavor, sim in zip(top_flavors, ci.similarities(image_features, top_flavors))}
-    
-    return medium_ranks, artist_ranks, movement_ranks, trending_ranks, flavor_ranks
-
-def image_to_prompt(image, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, prefix_text, postfix_text):
-    
-    setup_interrogator(blip_model, clip_model, caption_max_length, chunk_size, flavor_intermediate_count)
-    # ci.config.chunk_size = 2048 if ci.config.clip_model_name == "ViT-L-14/openai" else 1024
-    # ci.config.flavor_intermediate_count = 16 if ci.config.clip_model_name == "ViT-L-14/openai" else 1024
-    
+def image_to_prompt(image, mode):
     image = image.convert("RGB")
     if mode == 'best':
         prompt = ci.interrogate(image)
@@ -139,20 +129,27 @@ def image_to_prompt(image, mode, clip_model, blip_model, caption_max_length, chu
         prompt = ci.interrogate_negative(image)
     elif mode == 'caption':
         prompt = ci.generate_caption(image)
-    elif mode == 'features':
-        image_features = ci.image_to_features(image)
-        prompt = ", ".join(ci.flavors.rank(image_features, 20))
 
-    prompt = "%s%s%s" % (prefix_text, prompt, postfix_text)
+    return prompt
+
+def caption_image(image, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, num_top_classes, prefix_text, postfix_text):
+    
+    setup_interrogator(blip_model, clip_model, caption_max_length, chunk_size, flavor_intermediate_count)
+    
+    top_mediums, top_artists, top_movements, top_trendings, top_flavors = image_analysis(image, clip_model, num_top_classes)
+
+    prompt = "%s%s%s" % (prefix_text, image_to_prompt(image, mode), postfix_text)
     
     with open('last_prompt.txt', 'w', encoding='UTF-8') as f:
         f.write(prompt)
         
     cuda_info=device_info()
     
-    return prompt, cuda_info
+    return prompt, cuda_info, top_mediums, top_artists, top_movements, top_trendings, top_flavors
 
-def batch_process(batch_folder, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, prefix_text, postfix_text, img_exts, caption_ext):
+def batch_caption_images(batch_folder, mode, clip_model, blip_model, 
+                         caption_max_length, chunk_size, flavor_intermediate_count, 
+                         prefix_text, postfix_text, img_exts, caption_ext, filename_filter):
     setup_interrogator(blip_model, clip_model, caption_max_length, chunk_size, flavor_intermediate_count)
     
     new_list = list()
@@ -168,30 +165,31 @@ def batch_process(batch_folder, mode, clip_model, blip_model, caption_max_length
     if caption_ext.startswith(".") is False:
         caption_ext = ".%s" % caption_ext
     
+    global cancel_status
+    
     for root, dirs, files in os.walk(batch_folder):
         for file in files:
-            if file.endswith(tuple(new_list)):
-                image_file = os.path.join(root, file)
-                image = Image.open(image_file).convert("RGB")
-                # prompt = prefix_caption
-                file_name, ext = os.path.splitext(image_file)
-                caption_path = "%s%s" % (file_name, caption_ext)
-                if mode == 'best':
-                    prompt = ci.interrogate(image)
-                elif mode == 'classic':
-                    prompt = ci.interrogate_classic(image)
-                elif mode == 'fast':
-                    prompt =  ci.interrogate_fast(image)
-                elif mode == 'negative':
-                    prompt = ci.interrogate_negative(image)
-                elif mode == 'caption':
-                    prompt = ci.generate_caption(image)
+            try:
+                if cancel_status:
+                    print ("interrogate Interrupt")
+                    break
+                if file.endswith(tuple(new_list)) and filename_filter in file:
+                    image_file = os.path.join(root, file)
+                    image = Image.open(image_file).convert("RGB")
+                    file_name, ext = os.path.splitext(image_file)
+                    caption_path = "%s%s" % (file_name, caption_ext)
+                        
+                    prompt = "%s%s%s" % (prefix_text, image_to_prompt(image, mode), postfix_text)
                     
-                prompt = "%s%s%s" % (prefix_text, prompt, postfix_text)
-                
-                with open(caption_path, 'w', encoding='UTF-8') as f:
-                    f.write(prompt)
+                    with open(caption_path, 'w', encoding='UTF-8') as f:
+                        f.write(prompt)
+                    
+                    print ("%s prompt sucess" % caption_path)
+                        
+            except OSError as e:
+                print(f"{e}; continuing")
 
+    cancel_status = False
     print ("interrogate finish")
     
     cuda_info=device_info()

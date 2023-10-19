@@ -1,33 +1,44 @@
 from tkinter import Tk, filedialog
 import os
 
-def file_browser(data_type):
+def file_browser(filetypes:dict):
     '''
-    data_type as Files or Folder
+    return file path
     '''
     root = Tk()
     root.attributes("-topmost", True)
     root.withdraw()
-    if data_type == "Files":
-        filenames = filedialog.askopenfilenames()
-        if len(filenames) > 0:
-            root.destroy()
-            return str(filenames)
-        else:
-            filename = "Files not seleceted"
-            root.destroy()
-            return str(filename)
 
-    elif data_type == "Folder":
-        filename = filedialog.askdirectory()
-        if filename:
-            if os.path.isdir(filename):
-                root.destroy()
-                return str(filename)
-            else:
-                root.destroy()
-                return str(filename)
-        else:
-            filename = "Folder not seleceted"
+    filenames = filedialog.askopenfilenames(filetypes=filetypes['video files'])
+    if len(filenames) > 0:
+        root.destroy()
+        result = list(filenames)
+        # return str(filenames)
+    else:
+        filename = "Files not seleceted"
+        root.destroy()
+        result = str(filename)
+    
+    return result
+
+def folder_browser():
+    '''
+    return folder
+    '''
+    root = Tk()
+    root.attributes("-topmost", True)
+    root.withdraw()
+
+    folder_path = filedialog.askdirectory()
+    if folder_path:
+        if os.path.isdir(folder_path):
             root.destroy()
-            return str(filename)
+            return str(folder_path)
+        else:
+            root.destroy()
+            return str(folder_path)
+    else:
+        folder_path = "Folder not seleceted"
+        root.destroy()
+        return str(folder_path)
+        
