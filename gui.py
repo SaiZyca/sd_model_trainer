@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import gradio as gr
 import os
-from modules import cmd_args, ui_training_picker
+from modules import cmd_args
 from pathlib import Path
 
 
-# , ui_train_avatar, ui_clip_interrogator
+# , ui_train_avatar
 # def setup():
 #     install_cmds = [
 #         ['pip', 'install', 'gradio'],
@@ -33,9 +33,11 @@ def UI(**kwargs):
 
     with interface:
         with gr.Tab('Training Picker'):
+            from modules import ui_training_picker
             ui_training_picker.ui()
-        # with gr.Tab('clip interrogator'):
-        #     ui_clip_interrogator.ui()
+        with gr.Tab('clip interrogator'):
+            from modules import ui_clip_interrogator
+            ui_clip_interrogator.ui()
         # with gr.Tab('Avatar Trainer'):
         #     ui_train_avatar.ui()
 

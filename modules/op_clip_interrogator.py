@@ -129,16 +129,22 @@ def image_to_prompt(image, mode):
         prompt = ci.interrogate_negative(image)
     elif mode == 'caption':
         prompt = ci.generate_caption(image)
+    elif mode == 'Manual':
+        prompt = ""
 
     return prompt
 
-def caption_image(image, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, num_top_classes, prefix_text, postfix_text):
+def caption_image(image, mode, clip_model, blip_model, caption_max_length, chunk_size, flavor_intermediate_count, num_top_classes, prefix_text, postfix_text, filter_text):
     
     setup_interrogator(blip_model, clip_model, caption_max_length, chunk_size, flavor_intermediate_count)
     
     top_mediums, top_artists, top_movements, top_trendings, top_flavors = image_analysis(image, clip_model, num_top_classes)
 
     prompt = "%s%s%s" % (prefix_text, image_to_prompt(image, mode), postfix_text)
+    
+    filter_text_list = filter_text.replace(' ','').split(',')
+    for text in filter_text_list:
+        prompt = prompt.replace(text, '')
     
     with open('last_prompt.txt', 'w', encoding='UTF-8') as f:
         f.write(prompt)
@@ -149,7 +155,7 @@ def caption_image(image, mode, clip_model, blip_model, caption_max_length, chunk
 
 def batch_caption_images(batch_folder, mode, clip_model, blip_model, 
                          caption_max_length, chunk_size, flavor_intermediate_count, 
-                         prefix_text, postfix_text, img_exts, caption_ext, filename_filter):
+                         prefix_text, postfix_text, img_exts, caption_ext, filter_text, filename_filter):
     setup_interrogator(blip_model, clip_model, caption_max_length, chunk_size, flavor_intermediate_count)
     
     new_list = list()
@@ -180,6 +186,10 @@ def batch_caption_images(batch_folder, mode, clip_model, blip_model,
                     caption_path = "%s%s" % (file_name, caption_ext)
                         
                     prompt = "%s%s%s" % (prefix_text, image_to_prompt(image, mode), postfix_text)
+                    
+                    filter_text_list = filter_text.replace(' ','').split(',')
+                    for text in filter_text_list:
+                        prompt = prompt.replace(text, '')
                     
                     with open(caption_path, 'w', encoding='UTF-8') as f:
                         f.write(prompt)

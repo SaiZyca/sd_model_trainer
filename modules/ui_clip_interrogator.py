@@ -6,7 +6,7 @@ from . import op_tinker
 
 
 
-def prompt_tab():
+def caption_image_ui():
     with gr.Group():
         with gr.Accordion("clip interrogator Config", open=True):
             with gr.Row():
@@ -15,7 +15,7 @@ def prompt_tab():
                 flavor_intermediate_count = gr.Number(value=2048, label="flavor count", minimum=1,step=1, interactive=True,)
                 num_top_classes = gr.Number(label="top features count", value = 5, maximum=100, minimum=1, step=1)
             with gr.Row():
-                mode = gr.Dropdown(['best', 'fast', 'classic', 'negative', 'caption'], value='caption', label='Mode')
+                mode = gr.Dropdown(['best', 'fast', 'classic', 'negative', 'caption', 'Manual'], value='caption', label='Mode')
                 clip_model = gr.Dropdown(Ci_op.list_clip_models(), value=Ci_op.ci.config.clip_model_name, label='CLIP Model')
                 blip_model = gr.Dropdown(Ci_op.list_caption_models(), value=Ci_op.ci.config.caption_model_name, label='Caption Model')
     with gr.Group():
@@ -34,6 +34,7 @@ def prompt_tab():
         with gr.Row():
             prefix_text = gr.Textbox(placeholder="Prefix to add to caption (Optional)", show_label=False)
             postfix_text = gr.Textbox(placeholder="Postfix to add to caption (Optional)", show_label=False)
+            filter_text = gr.Textbox(placeholder="filter caption if exist (Optional, separated by ,)", show_label=False)
             caption_ext = gr.Textbox(placeholder="Caption file extension, default .txt", show_label=False)
         with gr.Row():
             batch_caption_images_button = gr.Button("Batch Caption images in folder")
@@ -69,10 +70,11 @@ def prompt_tab():
     caption_image_button.click(Ci_op.caption_image, 
                         inputs=[image, mode, clip_model, blip_model, 
                                 caption_max_length, chunk_size, flavor_intermediate_count, num_top_classes, 
-                                prefix_text, postfix_text, ], 
-                        outputs=[prompt, device_info_box, top_mediums, top_artists, top_movements, top_trendings, top_flavors],)
+                                prefix_text, postfix_text, filter_text ], 
+                        outputs=[prompt, device_info_box, top_mediums, top_artists, top_movements, top_trendings, top_flavors],
+                        api_name="caption-image",)
     
-    open_folder_button.click(op_tinker.file_browser, 
+    open_folder_button.click(op_tinker.folder_browser, 
                              inputs=[], 
                              outputs=batch_folder, 
                              show_progress="hidden")
@@ -80,7 +82,7 @@ def prompt_tab():
     batch_caption_images_button.click(Ci_op.batch_caption_images, 
                         inputs=[batch_folder, mode, clip_model, blip_model, 
                                 caption_max_length, chunk_size, flavor_intermediate_count, 
-                                prefix_text, postfix_text, img_exts, caption_ext, filename_filter],
+                                prefix_text, postfix_text, img_exts, caption_ext, filter_text, filename_filter],
                         outputs=device_info_box,
                         )
     
@@ -100,9 +102,7 @@ def prompt_tab():
     
 def ui():
     with gr.Blocks() as ui:
-        prompt_tab()
-        # with gr.Tab('Prompt'):
-        #     prompt_tab()
+        caption_image_ui()
         # with gr.Tab('Analyze'):
         #     analyze_tab()
         # with gr.Tab('About'):

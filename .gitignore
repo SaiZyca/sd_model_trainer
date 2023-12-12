@@ -6,3 +6,4 @@ venv/
 modules/ffmpeg.exe
 modules/ffplay.exe
 modules/ffprobe.exe
+note.py

@@ -19,3 +19,9 @@
     padding-left: 0.75em;
     padding-right: 0.75em;
 }
+
+#small_slider_input{
+    width: 0.5em;
+    max-width: 0.5em;
+    min-width: 0.5em;
+}
